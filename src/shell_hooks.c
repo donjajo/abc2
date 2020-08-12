@@ -1,5 +1,4 @@
-#include <stdio.h>
-#include "shell_hooks.h"
+#include "headers/shell_hooks.h"
 
 void init_hooks(size_t len, cmd hooks[len]) {
     size_t i;

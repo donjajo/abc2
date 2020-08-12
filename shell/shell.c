@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../src/strings.h"
+#include "../src/headers/strings.h"
 #include "args.h"
 #include "shell.h"
 
@@ -57,8 +57,8 @@ char* cmdtmpbuf(const char* c, int action ) {
 
 int shell_run(size_t cmd_len_max) {
     char* c = malloc(sizeof( char[cmd_len_max+1] ) );
-    char* default_prompt = "> ";
-    char* prompt = default_prompt;
+    wchar_t* default_prompt = L"\u27A4 ";
+    wchar_t* prompt = default_prompt;
     char* tmp_buf;
     _Bool in_quotes = 0;
 
@@ -70,9 +70,9 @@ int shell_run(size_t cmd_len_max) {
     }
 
     memset(c, 0, cmd_len_max+1);
-
+    shell_run_autoload();
     while(1) {
-        printf( "%s", prompt );
+        printf( "%ls", prompt );
         fgets(c, cmd_len_max+1, stdin);
         c = ltrim(ltrim(c, '\n'), ' ');
         c = in_quotes ? c : rtrim( c, '\n', 0);
@@ -91,7 +91,7 @@ int shell_run(size_t cmd_len_max) {
             continue;
         } else {
             if (unclosedquote(tmp_buf)) {
-                prompt="";
+                prompt=L"";
                 in_quotes = 1;
                 continue;
             } else {
@@ -132,10 +132,20 @@ size_t shell_hook_count(size_t c) {
     return count;
 }
 
+inline void shell_run_autoload() {
+    size_t hook_count = shell_hook_count(SHELL_HOOK_CUR);
+
+    for( size_t i = 0; i<hook_count; i++ ) {
+        if ( CMDS[i].autorun ) {
+            CMDS[i].func(0, 0);
+        }
+    }
+}
+
 void shell_help_menu() {
     size_t hook_count = shell_hook_count(SHELL_HOOK_CUR);
     for( size_t i=0;i<hook_count;i++) {
-        printf( "\t%s%5c %-40s\n", CMDS[i].cmd, '-', CMDS[i].desc);
+        printf( "\t%s%3c %-30s\n", CMDS[i].cmd, '-', CMDS[i].desc);
     }
 }
 

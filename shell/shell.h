@@ -12,6 +12,7 @@
         const char* cmd;
         const char* desc;
         int (*func)(size_t argc, char** argv);
+        _Bool autorun;
     } cmd;
 
     int shell_init();
@@ -21,4 +22,5 @@
     size_t shell_hook_count(size_t c);
     void shell_help_menu();
     char* cmdtmpbuf(const char* c, int action);
+    void shell_run_autoload();
 #endif

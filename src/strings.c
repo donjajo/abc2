@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
+#include "headers/strings.h"
 
 char* ltrim( char* str, const char c ) {
     if( str[0] != c ) 
@@ -56,4 +54,20 @@ _Bool unclosedquote(char* str) {
     }
 
     return s_quoteopened || d_quoteopened;
+}
+
+_Bool is_num( size_t len, wchar_t str[len]) {
+    size_t i;
+    int n;
+
+    if ( len > 0 ) {
+        for( i=0;i<len;i++) {
+            n = str[i] - '0';
+            if ( n < 0 || n > 9 ) {
+                return 0;
+            }
+        }
+    }
+
+    return 1;
 }

@@ -1,10 +1,10 @@
 #include "abc2.h"
 
-#define CMD_LEN 6
+#define CMD_LEN 9
 #define MAX_KEYS 10
 #define MAX_VALUES 4
 
-void resetoptind( int optind[static 1] ) {
+inline void resetoptind( int optind[static 1] ) {
     *optind = 1;
 }
 
@@ -95,31 +95,59 @@ int exportkey(size_t argc, char** argv) {
     return EXIT_FAILURE;
 }
 
-int main() {
-    cmd cmds[CMD_LEN] = {
-        { .cmd="q", .desc="Exit interactive shell", .func=exit_shell },
-        { .cmd="h", .desc="Show help menu", .func=show_help},
-        { .cmd="v", .desc="View keymaps", .func=view_keymaps},
-        { .cmd="r", .desc="Remap key (e.g. r 9 a,b,c)", .func=remap_key },
-        { .cmd="d", .desc="Decode an encrypted data using the keymaps", .func=decode },
-        { .cmd="e", .desc="Export current mapping to a file", .func=exportkey },
-    };
+int unmap_key( size_t argc, char* argv[argc] ) {
+    if ( argc < 2 ) {
+        printf( "Usage: unmap [...maps]\n");
 
-    char keymaps[11][4] = {
-        { ' ' },
-        { ',', '.', '!' },
-        { 'a', 'b', 'c' },
-        { 'd', 'e', 'f' },
-        { 'g', 'h', 'i' },
-        { 'j', 'k', 'l' },
-        { 'm', 'n', 'o'},
-        { 'p', 'q', 'r', 's' },
-        { 't', 'u', 'v' },
-        { 'w', 'x', 'y', 'z' },
-        { '&', '-', '_'},
+        return 1;
+    }
+
+    delete_keymaps(argv[1]);
+
+    return 0;
+}
+
+void welcome() {
+    printf( "===== ABC2 Encoder/Decoder ======\n" );
+    printf( "Current Locale: %s\n\n", setlocale( LC_ALL, 0));
+}
+
+int clear() {
+    // for( size_t i = 0; i < 23; i++ ) {
+    //     printf( "\n" );
+    // }
+
+    execl( "/usr/bin/clear", 0);
+}
+
+int main() {
+    setlocale( LC_ALL, "" );
+    
+    cmd cmds[CMD_LEN] = {
+        { .cmd="quit", .desc="Exit interactive shell", .func=exit_shell },
+        { .cmd="help", .desc="Show help menu", .func=show_help, .autorun=1 },
+        { .cmd="list", .desc="View keymaps", .func=view_keymaps},
+        { .cmd="map", .desc="Map keys (e.g. map -n 9 -v a,b,c)", .func=remap_key },
+        { .cmd="decode", .desc="Decode an encrypted data using the keymaps", .func=decode },
+        { .cmd="encode", .desc="Export current mapping to a file", .func=exportkey },
+        { .cmd="setlocale", .desc="Set Locale", .func=exportkey },
+        { .cmd="unmap", .desc="Unmap a mapping", .func=unmap_key },
+        { .cmd="clear", .desc="Clear console", .func=clear },
     };
-    
-    
+    welcome();
+    // char keymaps[11][4] = {
+    //     { ' ' },
+    //     { ',', '.', '!' },
+    //     { 'a', 'b', 'c' },
+    //     { 'd', 'e', 'f' },
+    //     { 'g', 'h', 'i' },
+    //     { 'j', 'k', 'l' },
+    //     { 'm', 'n', 'o'},
+    //     { 'p', 'q', 'r', 's' },
+    //     { 't', 'u', 'v' },
+    //     { 'w', 'x', 'y', 'z' },
+    //     { '&', '-', '_'},
+    // };
     
     // map_num(0, 1, keymaps[0]);
     // map_num(1, 3, keymaps[1]);
@@ -136,7 +164,7 @@ int main() {
     shell_init();
     init_hooks(CMD_LEN, cmds);
     shell_run(ARG_MAX);
-
+    
     destroy_obj();
 
     return 0;
