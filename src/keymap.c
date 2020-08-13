@@ -79,7 +79,7 @@ int remap_keymap(int n, char const* values ) {
         }
         
         k = map_exists(v, !isnum, 0);
-        if ( k && k->n != n ) {
+        if ( k ) {
             ret = REMAP_ERR_MAP_EXISTS;
             break;
         }
@@ -515,53 +515,66 @@ _Bool __iter_obj(iter_f func, int argc, ...) {
     return 1;
 }
 
-int findunit( int num, int sum ) {
-
-    int x = num/( num < 0 ? -10 : 10);
-    if ( num < 0 ) {
-        sum++;
-    }
-
-    if ( x < 1 ) {
-        return sum;
-    }
-
-    sum++;
-    return findunit(x, sum);
-}
-
 void _write_line( key* k, int argc, va_list arglist ) {
     if ( argc < 1 )
         return;
     
     int digitcount = findunit(k->n, 1);
-    size_t len = (k->len + digitcount + 2); // This will produce a line like this "48:abceowpsi"
-    char buf[len];
-    static int fd = 0;
-    int i;
-    if ( fd == 0 )
+    size_t len = (k->len + digitcount + 3); // This will produce a line like this "48\tabceowpsi\n"
+    wchar_t buf[len];
+    static int fd = -1;
+
+    if ( fd == -1 )
         fd = va_arg(arglist, int);
 
-    memset(buf, 0, len);
-    sprintf(buf, "%d:", k->n);
-    for( i = 0; i<k->len; i++ ) {
-        buf[digitcount+(i+1)] = k->maps[i];
-    }
-    buf[len-1]='\n';
+    swprintf(buf, len, L"%d\t", k->n);
 
-    write(fd, buf, len);
+    for( int i = 0; i<k->len; i++ ) {
+        wchar_t v = (wchar_t) k->maps[i];
+        if ( !is_char(i, k->wcharcount, k->wchars) ) {
+            wchar_t b[2];
+            swprintf(b, 2, L"%Ld", k->maps[i]);
+            v = b[0];
+        }
+
+        buf[digitcount+(i+1)] = v;
+    }
+    buf[len-2]=L'\n';
+    buf[len-1]=0;
+
+    dprintf( fd, "%ls", buf);
 }
 
-_Bool export_key(char const* file) {
+_Bool export(char const* filename) {
     int fd;
-    mode_t mode = S_IRUSR|S_IWUSR;
+    size_t len = strlen(filename);
+    mode_t perm = S_IRUSR|S_IWUSR;
+    mode_t flags = O_WRONLY|O_TRUNC|O_CREAT;
 
-    if ( ( fd = open( file, O_CREAT | O_TRUNC | O_WRONLY, mode ) ) < 0 ) {
-        return 0;
+    if ( len ) {
+        fd = open( filename, flags, perm);
+        if ( fd < 0 ) {
+            error_terminate(__func__, "open");
+        }
+    } else {
+        fd = STDOUT_FILENO;
     }
 
-    __iter_obj(_write_line, 1, fd);
-    close(fd);
+    if ( !len ) {
+        printf( "\n\n" );
+    }
+    dprintf(fd, "#####\tKEY FILE BEGINS\t#####\n" );
 
+    __iter_obj(_write_line, 1, fd);
+
+    dprintf( fd, "#####\tKEY FILE ENDS\t#####" );
+
+    if ( !len ) {
+        printf( "\n\n" );
+    }
+
+    if ( len )
+        close(fd);
     return 1;
+    
 }

@@ -6,4 +6,5 @@
 
     void error_terminate( const char* fn, const char* err );
     void* __memcpy(void* dest, void* src, size_t len );
+    int findunit( int num, int sum );
 #endif

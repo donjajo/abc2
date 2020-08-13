@@ -81,17 +81,10 @@ int decode( size_t argc, char** argv) {
 }
 
 int exportkey(size_t argc, char** argv) {
-    if ( argc < 2 ) {
-        printf( "Provide path to file\n" );
-        return EXIT_FAILURE;
-    }
-    
-    if ( export_key(argv[1]) ) {
-        printf( "File exported successfully!\n" );
+    if ( export( argc < 2 ? "" : argv[1] ) ) {
         return 0;
     }
 
-    perror( argv[1] );
     return EXIT_FAILURE;
 }
 
@@ -129,7 +122,7 @@ int main() {
         { .cmd="list", .desc="View keymaps", .func=view_keymaps},
         { .cmd="map", .desc="Map keys (e.g. map -n 9 -v a,b,c)", .func=remap_key },
         { .cmd="decode", .desc="Decode an encrypted data using the keymaps", .func=decode },
-        { .cmd="encode", .desc="Export current mapping to a file", .func=exportkey },
+        { .cmd="export", .desc="Export current keymaps to a key file", .func=exportkey },
         { .cmd="setlocale", .desc="Set Locale", .func=exportkey },
         { .cmd="unmap", .desc="Unmap a mapping", .func=unmap_key },
         { .cmd="clear", .desc="Clear console", .func=clear },

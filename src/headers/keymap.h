@@ -10,6 +10,7 @@
     #include <wchar.h>
     #include "utils.h"
     #include "strings.h"
+    #include "types.h"
     
     #define KEYMAP_H 1
     #define KEY_LEN_CUR 0
@@ -17,19 +18,6 @@
     #define REMAP_ERR_CHAROVERFLOW 2
     #define REMAP_ERR_MAP_EXISTS -1
     #define REMAP_ERR_ISNULL -3
-
-    typedef long long kv_int;
-    typedef wchar_t kv_char;
-
-    typedef struct key {
-        int n;
-        size_t len;
-        kv_int* maps;
-        size_t* wchars;
-        size_t wcharcount;
-    } key;
-
-    typedef void (*iter_f)(key*, int argc, va_list arg_list );
 
     _Bool map_num( int num, size_t len, kv_int maps[len], _Bool ischar );
     int resize_obj(size_t nsize);
@@ -44,7 +32,7 @@
     _Bool map_one_char( int n, kv_char c );
     _Bool __iter_obj(iter_f func, int argc, ...);
     void _write_line( key* k, int argc, va_list arglist );
-    _Bool export_key(char const* file);
+    _Bool export(char const* file);
     void addwchar(key* k );
     _Bool is_char(size_t index, size_t len, size_t indexes[len] );
     _Bool delete_keymaps( char* keymaps );
