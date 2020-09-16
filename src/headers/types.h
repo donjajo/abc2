@@ -15,5 +15,11 @@
         size_t wcharcount;
     } key;
 
+    struct keyfile {
+        int n;
+        size_t len;
+        wchar_t* maps;
+    };
+
     typedef void (*iter_f)(key*, int argc, va_list arg_list );
 #endif

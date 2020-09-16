@@ -19,6 +19,7 @@
     #define REMAP_ERR_MAP_EXISTS -1
     #define REMAP_ERR_ISNULL -3
 
+
     _Bool map_num( int num, size_t len, kv_int maps[len], _Bool ischar );
     int resize_obj(size_t nsize);
     key* key_exists( int n );
@@ -40,6 +41,7 @@
     void delete_wchars( size_t index, key* keymap );
     void decrement_wchars( size_t start, key* keymap );
     _Bool delete_n( int n );
+    _Bool map_from_keyfile(struct keyfile key, _Bool ignore_dup );
 
     #define map_one(N,V) _Generic( V, kv_int: map_one_int, kv_char: map_one_char ) (N,V, 0)
 #endif

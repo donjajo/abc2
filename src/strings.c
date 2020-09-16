@@ -62,6 +62,9 @@ _Bool is_num( size_t len, wchar_t str[len]) {
 
     if ( len > 0 ) {
         for( i=0;i<len;i++) {
+            if ( i == 0 && str[i] == L'-' )
+                continue;
+
             n = str[i] - '0';
             if ( n < 0 || n > 9 ) {
                 return 0;

@@ -271,9 +271,9 @@ _Bool delete_n( int n ) {
                 memmove(keys+i, keys+(i+1), sizeof(key[offset]));
             }
 
-            key_count(-1);
-            keys = realloc(keys, sizeof(keys[len-1]));
-            if ( !keys ) {
+            len = key_count(-1);
+            keys = realloc(keys, sizeof(key[len]));
+            if ( !keys && len ) {
                 error_terminate(__func__, "realloc" );
             }
 
@@ -343,6 +343,35 @@ key* key_exists( int n ) {
     }
 
     return NULL;
+}
+
+_Bool map_from_keyfile(struct keyfile key, _Bool ignore_dup ) {
+    for( size_t i = 0; i < key.len; i++ ) {
+        kv_int value;
+        _Bool ischar = 0;
+        size_t exists;
+
+        if ( is_num(1, key.maps+i) ) {
+            wchar_t b[2] = {key.maps[i], 0};
+            value = wcstoull(b, 0, 0);
+        } else {
+            value = (kv_int) key.maps[i];
+            ischar = 1;
+        }
+
+        if ( map_exists(value, ischar, &exists) ) { 
+            if ( !ignore_dup ) {
+                printf( "%d:%lc already exists. Please remove duplicates or pass -i to ignore duplicates\n", key.n, key.maps[i] );
+                return 0;
+            } else {
+                continue;
+            }
+        } 
+
+        map_one_int(key.n, value, ischar); 
+    }
+
+    return 1;
 }
 
 _Bool map_one_char( int n, kv_char c ) {
@@ -468,9 +497,7 @@ key* map_exists( kv_int c, _Bool ischar, size_t* index ) {
 
     for(i=0;i<s;i++) {
         for(j=0;j<obj[i].len;j++) {
-            // printf( "\t%Ld, %Ld\n", c, obj[i].maps[j]);
             if ( !ischar && obj[i].maps[j]==c )  {
-                // printf( "%Ld\n", obj[i].maps[j]);
                 if ( index )
                     *index = i;
                 return &obj[i];

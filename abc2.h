@@ -7,9 +7,11 @@
     #include <unistd.h>
     #include <locale.h>
     #include "shell/shell.h"
+    #include "src/headers/types.h"
     #include "src/headers/shell_hooks.h"
     #include "src/headers/keymap.h"
     #include "src/headers/decoder.h"
+    #include "src/headers/parser.h"
 
     int decode( size_t argc, char** argv);
     void resetoptind( int optind[static 1] );

@@ -105,12 +105,38 @@ void welcome() {
     printf( "Current Locale: %s\n\n", setlocale( LC_ALL, 0));
 }
 
-int clear() {
-    // for( size_t i = 0; i < 23; i++ ) {
-    //     printf( "\n" );
-    // }
+int load_key(size_t argc, char* argv[argc]) {
+    int opt;
+    extern int optind;
+    _Bool ignore_duplicates = 0;
+    resetoptind(&optind);
+   
+    while( ( opt = getopt(argc, argv, "i" ) ) != -1 ) {
+        switch( opt ) {
+            case 'i':
+                ignore_duplicates = 1;
+                break;
+            default:
+                ignore_duplicates = 0;
+                break;
+        }
+    }
 
-    execl( "/usr/bin/clear", 0);
+    while( optind < argc ) {
+        size_t len;
+        struct keyfile* keys = load_keyfile(argv[optind], &len);
+        
+        if ( keys ) {
+            for( size_t i = 0; i<len; i++ ) {
+                struct keyfile key = keys[i];
+                map_from_keyfile(key, ignore_duplicates);
+            }
+            free(keys);
+        }
+        optind++;
+    }
+
+    return 1;
 }
 
 int main() {
@@ -125,34 +151,9 @@ int main() {
         { .cmd="export", .desc="Export current keymaps to a key file", .func=exportkey },
         { .cmd="setlocale", .desc="Set Locale", .func=exportkey },
         { .cmd="unmap", .desc="Unmap a mapping", .func=unmap_key },
-        { .cmd="clear", .desc="Clear console", .func=clear },
+        { .cmd="load", .desc="Load key file", .func=load_key },
     };
     welcome();
-    // char keymaps[11][4] = {
-    //     { ' ' },
-    //     { ',', '.', '!' },
-    //     { 'a', 'b', 'c' },
-    //     { 'd', 'e', 'f' },
-    //     { 'g', 'h', 'i' },
-    //     { 'j', 'k', 'l' },
-    //     { 'm', 'n', 'o'},
-    //     { 'p', 'q', 'r', 's' },
-    //     { 't', 'u', 'v' },
-    //     { 'w', 'x', 'y', 'z' },
-    //     { '&', '-', '_'},
-    // };
-    
-    // map_num(0, 1, keymaps[0]);
-    // map_num(1, 3, keymaps[1]);
-    // map_num(2, 3, keymaps[2]);
-    // map_num(3, 3, keymaps[3]);
-    // map_num(4, 3, keymaps[4]);
-    // map_num(5, 3, keymaps[5]);
-    // map_num(6, 3, keymaps[6]);
-    // map_num(7, 4, keymaps[7]);
-    // map_num(8, 3, keymaps[8]);
-    // map_num(9, 4, keymaps[9]);
-    // map_num(-1, 3, keymaps[10]);
     
     shell_init();
     init_hooks(CMD_LEN, cmds);
