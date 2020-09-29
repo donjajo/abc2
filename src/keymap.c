@@ -11,6 +11,7 @@ int view_keymaps() {
     size_t j;
     size_t c = key_count(KEY_LEN_CUR); // Get count of mapped objects
     key* obj = get_obj((void*)0); // Get the object pointer containing all mappings
+    wchar_t buf[3];
     
     if ( !c ) {
         printf( "No maps yet!\n" );
@@ -20,9 +21,11 @@ int view_keymaps() {
     for( i=0;i<c;i++) {
         printf( "%d: {", obj[i].n);
         for( j=0; j<obj[i].len;j++) {
-            if ( is_char(j, obj[i].wcharcount, obj[i].wchars ) )
-                printf( "'%lc'", (kv_char) obj[i].maps[j] );
-            else 
+            if ( is_char(j, obj[i].wcharcount, obj[i].wchars ) ) {
+                memset(buf, 0, sizeof(wchar_t[3]));
+                convert_to_human((kv_char) obj[i].maps[j], buf);
+                printf( "'%ls'",  buf);
+            } else 
                 printf( "'%Ld'", obj[i].maps[j]);
 
             printf( "%c", (j+1!=obj[i].len ? ',' : '\0') );
@@ -138,6 +141,8 @@ size_t split_keymaps( char* keymaps, wchar_t*** buf ) {
         wcscpy(b[i], tokbuf);
     }  
 
+    free(wcharbuf);
+
     return i;
 }
 
@@ -150,12 +155,12 @@ _Bool delete_keymaps( char* keymaps ) {
         for( size_t i = 0; i < maps_count; i++ ) {
             size_t len = wcslen(buf[i]);
             _Bool isnum = is_num(1, buf[i]);
-            wchar_t* ptr;
             
             if ( len == 1 ) {                
-                val = isnum ? wcstoull(buf[i], &ptr, 0) : (kv_int)buf[i][0];
+                val = isnum ? wcstoull(buf[i], 0, 0) : (kv_int)buf[i][0];
                 delete(val, !isnum);
             }
+            free(buf[i]);
         }
 
         free(buf);
@@ -306,7 +311,7 @@ key* get_obj(key* nobj) {
     // Got new object? Probably after a realloc. Set to new object
     if ( nobj ) {
         p = nobj;
-        return NULL;
+        return 0;
     }
 
     if ( !p ) {
@@ -322,7 +327,16 @@ key* get_obj(key* nobj) {
 void destroy_obj() {
     key* obj;
 
-    if ( (obj=get_obj(NULL)) != NULL ) {
+    if ( (obj=get_obj(0)) != NULL ) {
+        size_t len = key_count(0);
+        
+        for( size_t i =0; i<len;i++) {
+            key k = obj[i];
+            if ( k.maps ) 
+                free(k.maps);
+            if( k.wchars ) 
+                free(k.wchars);
+        }
         free(obj);
     }
 }

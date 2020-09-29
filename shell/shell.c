@@ -40,7 +40,7 @@ char* cmdtmpbuf(const char* c, int action ) {
             }
             strcpy(buf, c);
         } else {
-            buf = realloc(buf, len+(c_len+1));
+            buf = realloc(buf, sizeof(char[len+(c_len+1)]) );
             if ( !buf ) {
                 printf( "%s:", __func__ );
                 perror( "realloc:" );
@@ -74,12 +74,12 @@ int shell_run(size_t cmd_len_max) {
     while(1) {
         printf( "%ls", prompt );
         fgets(c, cmd_len_max+1, stdin);
-        c = ltrim(ltrim(c, '\n'), ' ');
-        c = in_quotes ? c : rtrim( c, '\n', 0);
+        c = ltrim(c, ' ');
         c = rtrim( c , ' ', 0);
 
         cmdtmpbuf(c, CMDTMP_WRITE);
         tmp_buf = cmdtmpbuf(NULL, CMDTMP_GET);
+        
         len = strnlen(tmp_buf, cmd_len_max+1);
 
         if ( len > cmd_len_max ) {
@@ -87,9 +87,14 @@ int shell_run(size_t cmd_len_max) {
             break;
         }
        
-        if ( len == 0 ) { 
+        if ( len == 1 ) { // Nothing was input, just a newline. Continue
+            if ( !in_quotes ) {
+                // This is not in a quote, destroy the buffer
+                cmdtmpbuf(0, CMDTMP_DESTORY);
+            }
             continue;
         } else {
+            // If there is an unclosed quote. Set prompt to empty and toggle on in_quotes. Else, do the opposite
             if (unclosedquote(tmp_buf)) {
                 prompt=L"";
                 in_quotes = 1;
@@ -98,7 +103,7 @@ int shell_run(size_t cmd_len_max) {
                 prompt = default_prompt;
                 in_quotes = 0;
             }
-
+            tmp_buf[len-1] = 0; // Strip out last newline
             
             size_t argc;
             char** argv = shell_split_arg(tmp_buf, &argc);
@@ -122,6 +127,7 @@ int shell_run(size_t cmd_len_max) {
     }
 
     free(c);
+    free(CMDS);
     return 1;
 }
 

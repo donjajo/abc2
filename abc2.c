@@ -91,7 +91,6 @@ int exportkey(size_t argc, char** argv) {
 int unmap_key( size_t argc, char* argv[argc] ) {
     if ( argc < 2 ) {
         printf( "Usage: unmap [...maps]\n");
-
         return 1;
     }
 
@@ -139,11 +138,16 @@ int load_key(size_t argc, char* argv[argc]) {
     return 1;
 }
 
+int quit() {
+    destroy_obj();
+    return SHELL_EXIT;
+}
+
 int main() {
     setlocale( LC_ALL, "" );
     
     cmd cmds[CMD_LEN] = {
-        { .cmd="quit", .desc="Exit interactive shell", .func=exit_shell },
+        { .cmd="quit", .desc="Exit interactive shell", .func=quit },
         { .cmd="help", .desc="Show help menu", .func=show_help, .autorun=1 },
         { .cmd="list", .desc="View keymaps", .func=view_keymaps},
         { .cmd="map", .desc="Map keys (e.g. map -n 9 -v a,b,c)", .func=remap_key },
@@ -158,8 +162,6 @@ int main() {
     shell_init();
     init_hooks(CMD_LEN, cmds);
     shell_run(ARG_MAX);
-    
-    destroy_obj();
 
     return 0;
 }

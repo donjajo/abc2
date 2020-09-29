@@ -26,4 +26,5 @@
     char *rtrim( char* str, const char c, int ntimes );
     _Bool unclosedquote(char* str);
     _Bool is_num( size_t len, wchar_t str[len]);
+    wchar_t* convert_to_human( wchar_t c, wchar_t* buf );
 #endif

@@ -62,7 +62,7 @@ _Bool is_num( size_t len, wchar_t str[len]) {
 
     if ( len > 0 ) {
         for( i=0;i<len;i++) {
-            if ( i == 0 && str[i] == L'-' )
+            if ( len > 1 && i == 0 && str[i] == L'-' )
                 continue;
 
             n = str[i] - '0';
@@ -73,4 +73,27 @@ _Bool is_num( size_t len, wchar_t str[len]) {
     }
 
     return 1;
+}
+
+wchar_t* convert_to_human( wchar_t c, wchar_t* buf ) {
+    switch( c ) {
+        case L'\t':
+            wcscat(buf, L"\\t");
+            break;
+        case L'\n':
+            wcscat(buf, L"\\n");
+            break;
+        case L'\b':
+            wcscat( buf, L"\\b" );
+            break;
+        case L' ':
+            wcscat(buf, L"̺");
+            break;
+        default:
+            buf[0] = c;
+            buf[1] = L'\0';
+            break;
+    }
+
+    return buf;
 }
