@@ -1,6 +1,6 @@
 #include "abc2.h"
 
-#define CMD_LEN 9
+#define CMD_LEN 10
 #define MAX_KEYS 10
 #define MAX_VALUES 4
 
@@ -143,6 +143,185 @@ int quit() {
     return SHELL_EXIT;
 }
 
+inline char* createcopy( char const* src ) {
+    size_t s = strlen(src)+1;
+    char* b = malloc(sizeof(char[s]));
+    if ( !b ) {
+        error_terminate( __func__, "malloc" );
+    }
+    strcpy(b, src);
+    return b;
+}
+
+void showencodehelp() {
+    printf( "Encode a string or file\n\tencode [..options] [FILE]\nOPTIONS:\n" );
+    printf( "%5s\t%-5sCreate keymaps if they do not exist\n", "-c", "-" );
+    printf( "%5s\t%-5sShow help menu\n", "-h", "-" );
+    printf( "%5s\t%-5sOutput encoded file name\n", "-o", "-" );
+    printf( "%5s\t%-5sGenerate and dump keymap file to path\n", "-d", "-" );
+    printf( "%5s\t%-5sEncode string from stdin\n", "-s", "-" );
+}
+
+int write_encode(void* restrict dest, size_t n, wchar_t encoded[n]) {
+    FILE* f;
+    if ( !dest ) {
+        printf( "%ls\n", encoded); 
+        return 0;
+    } 
+    
+    f = fopen((char*) dest, "w");
+
+    if ( !f ) {
+        perror( "" );
+        return EXIT_FAILURE;
+    }
+
+    fwrite(encoded, sizeof(wchar_t), n, f);
+    fclose(f);
+    
+    return 0;
+}
+
+int makeencode(size_t argc, char** argv) {
+    int opt;
+    extern int optind;
+    _Bool create_keymaps = 0;
+    char *dumppath=0, *output=0, *toencode = 0;
+    extern char* optarg;
+
+    resetoptind(&optind);
+
+    if ( argc < 2 ) {
+        showencodehelp();
+        return 1;
+    }
+
+    while( ( opt = getopt(argc, argv, "cho:d:s:M:" ) ) != -1 ) {
+        switch( opt ) {
+            case 'c':
+                create_keymaps = 1;
+                break;
+            case 'o':
+                output = createcopy(optarg);
+                break;
+            case 'd':
+                dumppath = createcopy(optarg);
+                break;
+            case 's':
+                toencode = createcopy(optarg);
+                break;
+            case 'h':
+                showencodehelp();
+                goto FREE;
+                break;
+            default:
+                showencodehelp();
+                goto FREE;
+        }
+    }
+
+    if ( !toencode && optind == argc ) {
+        printf( "encode ... Positional argument [FILE] is missing. Or pass a string to -s option\n" );
+        goto FREE;
+    }
+    
+    if ( toencode  ) {
+        wchar_t* buf = 0;
+        size_t len = encode_string(toencode, &buf, create_keymaps);
+        write_encode(output, len, buf);
+        free(buf);
+
+        if ( dumppath ) {
+            export(dumppath);
+        }
+        goto FREE;
+    }
+
+    if ( optind != argc ) {
+        FILE* file;
+        wchar_t* buf = 0;
+        size_t len;
+        char* dump_dir, *bname, *strbuf;
+
+        for ( ; optind < argc; optind++ ) {
+            
+            file = fopen(argv[optind], "r");
+            if ( !file ) {
+                perror(argv[optind]);
+                goto FREE;
+            }
+            
+            dump_dir = getpath(argv[optind]);
+            bname = basename(argv[optind]);
+            
+            if ( ( strbuf = strrchr_r(bname, '.') ) ) {
+                bname = strbuf;
+            }
+            
+            size_t l = strlen(dump_dir)+1+strlen(bname)+1+strlen(ABC2_DEFAULT_EXT);
+            char dump[l];
+            strcpy(dump, dump_dir);
+            strcat(dump, "/");
+            strcat(dump, bname);
+            strcat(dump, ABC2_DEFAULT_EXT);
+            dump[l-1] = '\0';
+            free(dump_dir);
+            if (strbuf )
+                free(strbuf);
+            
+            if ( access(dump, F_OK) == 0 ) {
+                char ans[2];
+                size_t len;
+            
+                while(1) {
+                    printf( "%s already exist. Do you wish to overwrite? Y/N: ", dump);
+                    fflush(stdout);
+                    scanf( "%s", ans);
+                    len = strlen(ans);
+                    
+                    if ( len == 1 && (ans[0] == 'Y' || ans[0] == 'N' ) ) {
+                        break;
+                    }
+                }
+
+                if ( ans[0] == 'N' ) {
+                    fclose(file);
+                    break;
+                }
+                
+            }
+            
+            fprintf( stdout, "Encoding file contents..." );
+            fflush(stdout);
+            len = encode_file(file, &buf, create_keymaps);
+            fprintf( stdout, "DONE\n");
+            fflush(stdout);
+            if ( len ) {
+                fprintf(stdout, "Writing to %s...", dump);
+                fflush(stdout);
+                write_encode(dump, len, buf);
+                fprintf( stdout, "DONE\n");
+                fflush(stdout);
+                free(buf);
+            }
+            fclose(file);
+        }
+    }
+    
+    goto FREE;
+
+    return 0;
+
+    FREE:
+        if ( output ) 
+            free(output);
+        if (dumppath) 
+            free(dumppath);
+        if (toencode)
+            free(toencode);
+        return 0;
+}
+
 int main() {
     setlocale( LC_ALL, "" );
     
@@ -156,6 +335,7 @@ int main() {
         { .cmd="setlocale", .desc="Set Locale", .func=exportkey },
         { .cmd="unmap", .desc="Unmap a mapping", .func=unmap_key },
         { .cmd="load", .desc="Load key file", .func=load_key },
+        { .cmd="encode", .desc="Encode a string/file", .func=makeencode },
     };
     welcome();
     

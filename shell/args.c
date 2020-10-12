@@ -13,10 +13,7 @@ _Bool isdoublequote( const char c) {
 }
 
 char** shell_split_arg( char* cm, size_t* argc) {
-    size_t i=0;
-    size_t j=0;
-    size_t start=0;
-    size_t stop = 0;
+    size_t i=0, j=0, start=0, stop = 0;
     _Bool quoteopened = 0;
     char* tmp = cm;
     char** argv_buf = malloc(sizeof(char*));

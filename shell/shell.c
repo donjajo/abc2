@@ -6,6 +6,7 @@
 #include "shell.h"
 
 cmd* CMDS;
+static void free_argv(size_t argc, char* argv[argc]);
 
 int shell_init() {
     CMDS = malloc(sizeof(cmd));
@@ -69,13 +70,16 @@ int shell_run(size_t cmd_len_max) {
         exit(EXIT_FAILURE);
     }
 
-    memset(c, 0, cmd_len_max+1);
     shell_run_autoload();
     while(1) {
+        memset(c, 0, cmd_len_max+1);
         printf( "%ls", prompt );
         fgets(c, cmd_len_max+1, stdin);
         c = ltrim(c, ' ');
-        c = rtrim( c , ' ', 0);
+        if ( !unclosedquote(c))
+            c = rtrim( c , '\n', 1); // Remove last newline
+        c = rtrim( c , ' ', 0); // Strip usless spaces
+        
 
         cmdtmpbuf(c, CMDTMP_WRITE);
         tmp_buf = cmdtmpbuf(NULL, CMDTMP_GET);
@@ -103,7 +107,7 @@ int shell_run(size_t cmd_len_max) {
                 prompt = default_prompt;
                 in_quotes = 0;
             }
-            tmp_buf[len-1] = 0; // Strip out last newline
+            //tmp_buf[len-1] = 0; // Strip out last newline
             
             size_t argc;
             char** argv = shell_split_arg(tmp_buf, &argc);
@@ -112,11 +116,11 @@ int shell_run(size_t cmd_len_max) {
             if (!cm) {
                 printf( "%s: Invalid command!\n", tmp_buf);
                 cmdtmpbuf(NULL, CMDTMP_DESTORY);
-                free(argv);
+                free_argv(argc, argv);
                 continue;
             } else {
                 int status = cm->func(argc, argv);
-                free(argv);
+                free_argv(argc, argv);
                 if (status == SHELL_EXIT) {
                     cmdtmpbuf(NULL, CMDTMP_DESTORY);
                     break;
@@ -129,6 +133,14 @@ int shell_run(size_t cmd_len_max) {
     free(c);
     free(CMDS);
     return 1;
+}
+
+inline static void free_argv(size_t argc, char* argv[argc]) {
+    for ( size_t i = 0; i<argc; i++ ) {
+        free(argv[i]);
+    }
+
+    free( argv );
 }
 
 size_t shell_hook_count(size_t c) {

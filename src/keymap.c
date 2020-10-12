@@ -513,11 +513,11 @@ key* map_exists( kv_int c, _Bool ischar, size_t* index ) {
         for(j=0;j<obj[i].len;j++) {
             if ( !ischar && obj[i].maps[j]==c )  {
                 if ( index )
-                    *index = i;
+                    *index = j;
                 return &obj[i];
             } else if ( ischar && is_char(j, obj[i].wcharcount, obj[i].wchars) && obj[i].maps[j] == c ) {
                 if ( index )
-                    *index = i;
+                    *index = j;
                 return &obj[i];
             }
         }

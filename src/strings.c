@@ -25,7 +25,7 @@ char* rtrim( char* str, const char c, int ntimes ) {
         return str;
     }
 
-    for( ; str[i] == c && ntimes > 0; i--, ntimes-- );
+    for( ; str[i] == c && ntimes >= 0; i--, ntimes-- );
     
     str[i+1] = '\0';
 
@@ -96,4 +96,95 @@ wchar_t* convert_to_human( wchar_t c, wchar_t* buf ) {
     }
 
     return buf;
+}
+
+size_t convert_to_wchar( char const* chars, wchar_t** buf ) {
+    size_t len = mbstowcs(0, chars, 0);
+    if ( len == (size_t)-1) {
+        error_terminate( __func__, "mbstowcs" );
+    }
+
+    if ( len == 0 )
+        return 0;
+
+    if ( !*buf ) {
+        *buf = malloc(sizeof(wchar_t[len+1]));
+        if ( !*buf ) {
+            error_terminate(__func__, "malloc" );
+        }
+        *((*buf)+(len)) = 0;
+    }
+
+    mbstowcs(*buf, chars, len);
+    return len;
+}
+
+char* readline(char const* str, int state) {
+    static size_t i = 0;
+    static size_t j = 0;
+
+    if ( state == ABC2_STR_RESET ) {
+        i = 0;
+        j = 0;
+    }
+
+    if ( !str || !str[i] ) 
+        return 0;
+
+    for(; str[i] && str[i] != '\n'; i++);
+
+    size_t s = i-j;
+  
+    char* buf = malloc(sizeof(char[s+2]));
+    if ( !buf ) {
+        perror( "malloc" );
+        exit(EXIT_FAILURE);
+    }
+    memcpy(buf, str+j, s+1);
+    buf[s+1] = '\0';
+
+    if ( str[i] )
+        i++;
+    j = i;
+
+    return buf;
+}
+
+_Bool startswith(char const* needle, char const* haystack) {
+    if ( !haystack || !needle ) {
+        return 0;
+    }
+
+    for (size_t i = 0; needle[i]; i++ ) {
+        if ( !haystack[i] || ( needle[i] != haystack[i] ) )
+            return 0;
+    }
+
+    return 1;
+}
+
+char* strrchr_r(char const* haystack, char needle) {
+    if ( !haystack ) 
+        return 0;
+        
+    int last = -1, i = 0;
+
+    for ( ; haystack[i]; i++ ) {
+        if ( needle == haystack[i] && i > 0)
+            last = i;
+    }
+
+    if ( last >= 0 ) {
+        char* ret = malloc(sizeof(char[last+1]));
+        if ( !ret ) {
+            error_terminate(__func__, "malloc");
+        }
+
+        memcpy(ret, haystack, sizeof(char[last]));
+        ret[last] = '\0';
+        
+        return ret;
+    }
+
+    return 0;
 }
