@@ -10,7 +10,7 @@
     #endif 
 
     #ifndef ABC2_EN_DELIM
-        #define ABC2_EN_DELIM   "\t"
+        #define ABC2_EN_DELIM   L"\t"
     #endif
 
     #ifndef ABC2_EN_LINEMAX

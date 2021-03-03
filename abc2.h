@@ -19,7 +19,8 @@
         #define ABC2_DEFAULT_EXT    ".abc"
     #endif 
     
-    int decode( size_t argc, char** argv);
+    int decode_file( size_t argc, char** argv);
     void resetoptind( int optind[static 1] );
     char* createcopy( char const* src );
+    _Bool keyfile_load(char const* filename, _Bool ignore_dup);
 #endif

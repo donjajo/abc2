@@ -21,5 +21,10 @@
         wchar_t* maps;
     };
 
+    typedef struct abc2parsed {
+        int n;
+        size_t pos;
+    } abc2parsed;
+
     typedef void (*iter_f)(key*, int argc, va_list arg_list );
 #endif

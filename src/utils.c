@@ -93,3 +93,20 @@ char* getpath(char const* filename) {
 
     return path;
 }
+
+_Bool confirm(char const* msg, char const* yes, char const* no ) {
+    if ( !msg || !yes || !no ) 
+        return 0;
+
+    size_t sz = strlen(yes)+strlen(no);
+    char buf[sz];
+    memset(buf, 0, sizeof(char[sz]));
+
+    while( strcmp(buf, yes) != 0 && strcmp(buf, no) != 0 ) {
+        printf( msg );
+        fflush(stdout);
+        scanf( "%s", buf);
+    }
+
+    return !strcmp(buf, yes);
+}

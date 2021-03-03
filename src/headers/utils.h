@@ -13,5 +13,6 @@
     void* memincr(void* restrict ptr, size_t used, size_t towrite, size_t* total, size_t incr);
     _Bool is_rel_path(char const* path);
     _Bool is_abs_path(char const* path);
+    _Bool confirm(char const* msg, char const* yes, char const* no );
     char* getpath(char const* filename);
 #endif

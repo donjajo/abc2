@@ -1,0 +1,2 @@
+Dies ist ein deutscher Inhalt für den Codierungstest.
+Ich suche nach mehr Unicode-Zeichen auf Deutsch zum Testen. Anscheinend gibt es nicht viel auf Deutsch 

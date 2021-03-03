@@ -18,7 +18,9 @@ size_t encode_file( FILE* file, wchar_t** retbuf, _Bool create_keymaps ) {
     while( fgets(buf, maxlen, file) ) {
         size_t l = _line_encode(buf, retbuf, ismanaged, &total_encoded, &memused, create_keymaps);
         if ( !l ) {
-            break;
+            if (ismanaged)
+                free(*retbuf);
+            return 0;
         }
     }
 
@@ -104,7 +106,7 @@ wchar_t* encode( char const* string, _Bool create_keymaps ) {
     wchar_t* buf = 0;
     size_t len;
     if ( ( len = convert_to_wchar(string, &buf) ) ) {
-        size_t format_length = wcslen(ABC2_EN_FORMAT);
+        size_t format_length = wcslen(ABC2_EN_FORMAT)+wcslen(ABC2_EN_DELIM);
         size_t encodedmaxlen = 64;
         size_t totalsize = format_length+encodedmaxlen;
         wchar_t encodedbuf[totalsize+2];
@@ -183,7 +185,8 @@ _Bool getencode(kv_int value, _Bool ischar, size_t n, wchar_t writebuf[n]) {
     //     error_terminate(__func__, "malloc");
     // }
     swprintf(writebuf, n, ABC2_EN_FORMAT, k->n, index);
-    writebuf[wcslen(writebuf)] = L'\t'; 
+    wcscat(writebuf, ABC2_EN_DELIM);
+    // writebuf[wcslen(writebuf)] = ABC2_EN_DELIM; 
 
     return 1;
 }

@@ -10,6 +10,7 @@
     #include <wchar.h>
     #include "utils.h"
     #include "strings.h"
+    #include "parser.h"
     #include "types.h"
     
     #define KEYMAP_H 1

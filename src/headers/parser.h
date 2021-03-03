@@ -24,7 +24,5 @@
 
     struct keyfile* load_keyfile( char const* filename, size_t* s );
     _Bool is_comment( wchar_t const* wcs );
-    static int split_to_keyfile( wchar_t* line, struct keyfile* k, _Bool* escapestat );
-    static long split_lines(FILE* f, struct keyfile** keysbuf );
 
 #endif

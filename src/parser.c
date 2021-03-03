@@ -1,5 +1,8 @@
 #include "headers/parser.h"
 
+static int split_to_keyfile( wchar_t* line, struct keyfile* k, _Bool* escapestat );
+static long split_lines(FILE* f, struct keyfile** keysbuf );
+
 struct keyfile* load_keyfile( char const* filename, size_t* s ) {
     FILE* f = fopen(filename, "r");
     struct keyfile* buf = 0;
@@ -28,6 +31,10 @@ struct keyfile* load_keyfile( char const* filename, size_t* s ) {
         *s = (size_t) len; 
         return buf;
     }
+
+    // Free buffer is loading did not succeed. The upper function did not receive a success call, it wont free it
+    if (buf) 
+        free(buf);
 
     return 0;
 }
@@ -81,14 +88,17 @@ static long split_lines(FILE* f, struct keyfile** keysbuf ) {
             switch( s ) {
                 case ABC2_P_E_NOKEY:
                     fprintf( stderr, "No key provided in line %ld\n", linenumber );
+                    free(buf);
                     return s;
                 case ABC2_P_E_NOLINE:
                     fprintf(stderr, "Empty line\n" );
+                    free(buf);
                     return s;
                 case ABC2_P_E_ISCOMMENT:
                     continue;
                 default:
                     fprintf(stderr, "An unknown error occurred" );
+                    free(buf);
                     return s;
             }
         }
@@ -174,13 +184,19 @@ static int split_to_keyfile( wchar_t* line, struct keyfile* k, _Bool* escapestat
                 if ( line[i] == ABC2_P_ESCCHAR ) {
                     *escapestat = !*escapestat;
                     
-                    if ( *escapestat && line[i+1] == L'\n' ) // If it is an escape character followed by a newline, break this loop, its the end of the line
+                    if ( *escapestat && line[i+1] == L'\n' ) { // If it is an escape character followed by a newline, break this loop, its the end of the line
+                        i++;
+                        
+                        goto FOO;
                         break;
+                        
+                    }
                     
                     if ( *escapestat ) // If it is just an escape character and to be escaped, continue
                         continue;
                 }
 
+                FOO:
                 k->len++;
                 if ( k->len > mapcount ) {
                     mapcount += ABC2_P_MAP_COUNT_INC;

@@ -556,12 +556,22 @@ _Bool __iter_obj(iter_f func, int argc, ...) {
     return 1;
 }
 
+size_t esc_count(key k) {
+    size_t c = 0;
+    for ( size_t i = 0; i<k.len; i++ ) {
+        if ( is_char( i, k.wcharcount, k.wchars ) && ( k.maps[i] == '\n' || k.maps[i] == ABC2_P_ESCCHAR ) ) {
+            c++;
+        }
+    }
+    return c;
+}
+
 void _write_line( key* k, int argc, va_list arglist ) {
     if ( argc < 1 )
         return;
     
     int digitcount = findunit(k->n, 1);
-    size_t len = (k->len + digitcount + 3); // This will produce a line like this "48\tabceowpsi\n"
+    size_t len = (k->len + digitcount + 3 + esc_count(*k)); // This will produce a line like this "48\tabceowpsi\n"
     wchar_t buf[len];
     static int fd = -1;
 
@@ -570,15 +580,18 @@ void _write_line( key* k, int argc, va_list arglist ) {
 
     swprintf(buf, len, L"%d\t", k->n);
 
-    for( int i = 0; i<k->len; i++ ) {
+    for( int i = 0, j=0; i<k->len; i++, j++ ) {
         wchar_t v = (wchar_t) k->maps[i];
         if ( !is_char(i, k->wcharcount, k->wchars) ) {
             wchar_t b[2];
             swprintf(b, 2, L"%Ld", k->maps[i]);
             v = b[0];
+        } else if ( v == '\n' || v == ABC2_P_ESCCHAR ) {
+            buf[digitcount+(j+1)] = '\\';
+            j++;
         }
 
-        buf[digitcount+(i+1)] = v;
+        buf[digitcount+(j+1)] = v;
     }
     buf[len-2]=L'\n';
     buf[len-1]=0;
@@ -595,7 +608,8 @@ _Bool export(char const* filename) {
     if ( len ) {
         fd = open( filename, flags, perm);
         if ( fd < 0 ) {
-            error_terminate(__func__, "open");
+            perror( filename );
+            return 0;
         }
     } else {
         fd = STDOUT_FILENO;
@@ -605,7 +619,7 @@ _Bool export(char const* filename) {
         printf( "\n\n" );
     }
     dprintf(fd, "#####\tKEY FILE BEGINS\t#####\n" );
-
+    dprintf(fd, "# It is advisable not to edit this file\n" );
     __iter_obj(_write_line, 1, fd);
 
     dprintf( fd, "#####\tKEY FILE ENDS\t#####" );
