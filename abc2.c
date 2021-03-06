@@ -197,7 +197,7 @@ _Bool keyfile_load(char const* filename, _Bool ignore_dup) {
             struct keyfile key = keys[i];
             map_from_keyfile(key, ignore_dup);
         }
-        free(keys);
+        free_keyfile(len, keys);
 
         return 1;
     }
