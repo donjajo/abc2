@@ -9,200 +9,200 @@ cmd* CMDS;
 static void free_argv(size_t argc, char* argv[argc]);
 
 int shell_init() {
-    CMDS = malloc(sizeof(cmd));
-    if (!CMDS) {
-        return 0;
-    }
+	CMDS = malloc(sizeof(cmd));
+	if (!CMDS) {
+		return 0;
+	}
 
-    return 1;
+	return 1;
 }
 
-char* cmdtmpbuf(const char* c, int action ) {
-    static size_t len = 0;
-    static char* buf;
-    size_t c_len = 0;
+char* cmdtmpbuf(const char* c, int action) {
+	static size_t len = 0;
+	static char* buf;
+	size_t c_len = 0;
 
-    if ( action == CMDTMP_DESTORY && len ) {
-        free(buf);
-        len = 0;
+	if (action == CMDTMP_DESTORY && len) {
+		free(buf);
+		len = 0;
 
-        return NULL;
-    } else if ( action == CMDTMP_GET ) {
-        return buf;
-    } else if ( c && action == CMDTMP_WRITE ) {
-        c_len = strlen(c);
+		return NULL;
+	} else if (action == CMDTMP_GET) {
+		return buf;
+	} else if (c && action == CMDTMP_WRITE) {
+		c_len = strlen(c);
 
-        if ( !len ) {
-            buf = malloc(sizeof(char[c_len+1]));
-            if ( !buf ) {
-                printf( "%s:", __func__ );
-                perror( "malloc:" );
-                exit( EXIT_FAILURE );
-            }
-            strcpy(buf, c);
-        } else {
-            buf = realloc(buf, sizeof(char[len+(c_len+1)]) );
-            if ( !buf ) {
-                printf( "%s:", __func__ );
-                perror( "realloc:" );
-                exit( EXIT_FAILURE );
-            }
+		if (!len) {
+			buf = malloc(sizeof(char[c_len+1]));
+			if (!buf) {
+				printf("%s:", __func__);
+				perror("malloc:");
+				exit(EXIT_FAILURE);
+			}
+			strcpy(buf, c);
+		} else {
+			buf = realloc(buf, sizeof(char[len+(c_len+1)]));
+			if (!buf) {
+				printf("%s:", __func__);
+				perror("realloc:");
+				exit(EXIT_FAILURE);
+			}
 
-            strcat(buf, c);
-        }
-        len += c_len+1;
-    }
+			strcat(buf, c);
+		}
+		len += c_len+1;
+	}
 
-    return NULL;
+	return NULL;
 }
 
 int shell_run(size_t cmd_len_max) {
-    char* c = malloc(sizeof( char[cmd_len_max+1] ) );
-    wchar_t* default_prompt = L"\u27A4 ";
-    wchar_t* prompt = default_prompt;
-    char* tmp_buf;
-    _Bool in_quotes = 0;
+	char* c = malloc(sizeof(char[cmd_len_max+1]));
+	wchar_t* default_prompt = L"\u27A4 ";
+	wchar_t* prompt = default_prompt;
+	char* tmp_buf;
+	_Bool in_quotes = 0;
 
-    size_t len;
-    if (!c) {
-        printf( "%s:", __func__ );
-        perror( "malloc:" );
-        exit(EXIT_FAILURE);
-    }
+	size_t len;
+	if (!c) {
+		printf("%s:", __func__);
+		perror("malloc:");
+		exit(EXIT_FAILURE);
+	}
 
-    shell_run_autoload();
-    while(1) {
-        memset(c, 0, cmd_len_max+1);
-        printf( "%ls", prompt );
-        fgets(c, cmd_len_max+1, stdin);
-        c = ltrim(c, ' ');
-        if ( !unclosedquote(c))
-            c = rtrim( c , '\n', 1); // Remove last newline
-        c = rtrim( c , ' ', 0); // Strip usless spaces
-        
+	shell_run_autoload();
+	while (1) {
+		memset(c, 0, cmd_len_max+1);
+		printf("%ls", prompt);
+		fgets(c, cmd_len_max+1, stdin);
+		c = ltrim(c, ' ');
+		if (!unclosedquote(c))
+			c = rtrim(c , '\n', 1); // Remove last newline
+		c = rtrim(c , ' ', 0); // Strip usless spaces
 
-        cmdtmpbuf(c, CMDTMP_WRITE);
-        tmp_buf = cmdtmpbuf(NULL, CMDTMP_GET);
-        
-        len = strnlen(tmp_buf, cmd_len_max+1);
 
-        if ( len > cmd_len_max ) {
-            printf( "cmd_len_max reached!" );
-            break;
-        }
-       
-        if ( len == 1 ) { // Nothing was input, just a newline. Continue
-            if ( !in_quotes ) {
-                // This is not in a quote, destroy the buffer
-                cmdtmpbuf(0, CMDTMP_DESTORY);
-            }
-            continue;
-        } else {
-            // If there is an unclosed quote. Set prompt to empty and toggle on in_quotes. Else, do the opposite
-            if (unclosedquote(tmp_buf)) {
-                prompt=L"";
-                in_quotes = 1;
-                continue;
-            } else {
-                prompt = default_prompt;
-                in_quotes = 0;
-            }
-            //tmp_buf[len-1] = 0; // Strip out last newline
-            
-            size_t argc;
-            char** argv = shell_split_arg(tmp_buf, &argc);
-            
-            cmd* cm = shell_get_hook(argv[0]);
-            if (!cm) {
-                printf( "%s: Invalid command!\n", tmp_buf);
-                cmdtmpbuf(NULL, CMDTMP_DESTORY);
-                free_argv(argc, argv);
-                continue;
-            } else {
-                int status = cm->func(argc, argv);
-                free_argv(argc, argv);
-                if (status == SHELL_EXIT) {
-                    cmdtmpbuf(NULL, CMDTMP_DESTORY);
-                    break;
-                }
-                cmdtmpbuf(NULL, CMDTMP_DESTORY);
-            }
-        }
-    }
+		cmdtmpbuf(c, CMDTMP_WRITE);
+		tmp_buf = cmdtmpbuf(NULL, CMDTMP_GET);
 
-    free(c);
-    free(CMDS);
-    return 1;
+		len = strnlen(tmp_buf, cmd_len_max+1);
+
+		if (len > cmd_len_max) {
+			printf("cmd_len_max reached!");
+			break;
+		}
+
+		if (len == 1) { // Nothing was input, just a newline. Continue
+			if (!in_quotes) {
+				// This is not in a quote, destroy the buffer
+				cmdtmpbuf(0, CMDTMP_DESTORY);
+			}
+			continue;
+		} else {
+			// If there is an unclosed quote. Set prompt to empty and toggle on in_quotes. Else, do the opposite
+			if (unclosedquote(tmp_buf)) {
+				prompt=L"";
+				in_quotes = 1;
+				continue;
+			} else {
+				prompt = default_prompt;
+				in_quotes = 0;
+			}
+			//tmp_buf[len-1] = 0; // Strip out last newline
+
+			size_t argc;
+			char** argv = shell_split_arg(tmp_buf, &argc);
+
+			cmd* cm = shell_get_hook(argv[0]);
+			if (!cm) {
+				printf("%s: Invalid command!\n", tmp_buf);
+				cmdtmpbuf(NULL, CMDTMP_DESTORY);
+				free_argv(argc, argv);
+				continue;
+			} else {
+				int status = cm->func(argc, argv);
+				free_argv(argc, argv);
+				if (status == SHELL_EXIT) {
+					cmdtmpbuf(NULL, CMDTMP_DESTORY);
+					break;
+				}
+				cmdtmpbuf(NULL, CMDTMP_DESTORY);
+			}
+		}
+	}
+
+	free(c);
+	free(CMDS);
+	return 1;
 }
 
 inline static void free_argv(size_t argc, char* argv[argc]) {
-    for ( size_t i = 0; i<argc; i++ ) {
-        free(argv[i]);
-    }
+	for (size_t i = 0; i<argc; i++) {
+		free(argv[i]);
+	}
 
-    free( argv );
+	free(argv);
 }
 
 size_t shell_hook_count(size_t c) {
-    static size_t count=0;
+	static size_t count=0;
 
-    count+=c;
-    return count;
+	count+=c;
+	return count;
 }
 
 inline void shell_run_autoload() {
-    size_t hook_count = shell_hook_count(SHELL_HOOK_CUR);
+	size_t hook_count = shell_hook_count(SHELL_HOOK_CUR);
 
-    for( size_t i = 0; i<hook_count; i++ ) {
-        if ( CMDS[i].autorun ) {
-            CMDS[i].func(0, 0);
-        }
-    }
+	for (size_t i = 0; i<hook_count; i++) {
+		if (CMDS[i].autorun) {
+			CMDS[i].func(0, 0);
+		}
+	}
 }
 
 void shell_help_menu() {
-    size_t hook_count = shell_hook_count(SHELL_HOOK_CUR);
-    for( size_t i=0;i<hook_count;i++) {
-        printf( "\t%s%3c %-30s\n", CMDS[i].cmd, '-', CMDS[i].desc);
-    }
+	size_t hook_count = shell_hook_count(SHELL_HOOK_CUR);
+	for (size_t i=0;i<hook_count;i++) {
+		printf("\t%s%3c %-30s\n", CMDS[i].cmd, '-', CMDS[i].desc);
+	}
 }
 
-_Bool shell_hook( cmd cm ) {
-    size_t i = shell_hook_count(SHELL_HOOK_CUR);
+_Bool shell_hook(cmd cm) {
+	size_t i = shell_hook_count(SHELL_HOOK_CUR);
 
-    if( !CMDS ) {
-        fprintf(stderr, "shell_init(): not initialized\n" );
-        exit(1);
-    }
+	if(!CMDS) {
+		fprintf(stderr, "shell_init(): not initialized\n");
+		exit(1);
+	}
 
-    if (i==0) {
-        CMDS[i] = cm;
-        i = shell_hook_count(+1);
-    } else {
-        i = shell_hook_count(+1);
-        cmd* tmp = realloc(CMDS, sizeof( cmd[i] ) );
-        if (!tmp) {
-            return 0;
-        }
+	if (i==0) {
+		CMDS[i] = cm;
+		i = shell_hook_count(+1);
+	} else {
+		i = shell_hook_count(+1);
+		cmd* tmp = realloc(CMDS, sizeof(cmd[i]));
+		if (!tmp) {
+			return 0;
+		}
 
-        CMDS = tmp;
-        CMDS[i-1] = cm;
-    }
+		CMDS = tmp;
+		CMDS[i-1] = cm;
+	}
 
-    return 1;
+	return 1;
 }
 
-cmd* shell_get_hook( const char* cm ) {
-    size_t hook_count = shell_hook_count(SHELL_HOOK_CUR);
-    
-    if ( hook_count ) {
-        size_t i;
-        for(i=0;i<hook_count;i++) {
-            if ( !strcmp(CMDS[i].cmd, cm) ) {
-                return &CMDS[i];
-            }
-        }
-    }
+cmd* shell_get_hook(const char* cm) {
+	size_t hook_count = shell_hook_count(SHELL_HOOK_CUR);
 
-    return NULL;
+	if (hook_count) {
+		size_t i;
+		for (i=0;i<hook_count;i++) {
+			if (!strcmp(CMDS[i].cmd, cm)) {
+				return &CMDS[i];
+			}
+		}
+	}
+
+	return NULL;
 }
