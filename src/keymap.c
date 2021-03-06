@@ -337,7 +337,9 @@ void destroy_obj() {
             if( k.wchars ) 
                 free(k.wchars);
         }
-        free(obj);
+
+	if (len)
+        	free(obj);
     }
 }
 
@@ -476,12 +478,6 @@ void addwchar(key* k ) {
     }
 
     k->wcharcount++;
-
-    // printf( "Wchars: %ld\n", k->wcharcount );
-    // for( size_t i = 0; i<k->wcharcount; i++ ) {
-    //     printf( "%ld\n", k->wchars[i]);
-    // }
-    // printf( "\n" );
 }
 
 int resize_obj(size_t nsize) {
